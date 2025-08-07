@@ -1,0 +1,89 @@
+body {
+    background-color: #1a1a1a;
+    color: #00ff00;
+    font-family: 'Courier New', Courier, monospace;
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+}
+
+#terminal::after {
+    content: " ";
+    display: block;
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 0;
+    background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+    z-index: 2;
+    background-size: 100% 2px, 3px 100%;
+    pointer-events: none;
+    animation: flicker 0.1s infinite;
+}
+
+/* Треба додати position: relative до терміналу, щоб ::after працював правильно */
+#terminal {
+    position: relative; 
+    background-color: #000;
+    border: 1px solid #00ff00;
+    padding: 20px;
+    box-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+    min-height: 400px;
+}
+
+@keyframes flicker {
+  0% { opacity: 0.2; }
+  20% { opacity: 1.0; }
+  80% { opacity: 0.4; }
+  100% { opacity: 1.0; }
+}
+
+.output {
+    flex-grow: 1;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    word-break: break-all;
+    margin-bottom: 10px;
+}
+
+.input-line {
+    display: flex;
+}
+
+.prompt {
+    color: #00ff00;
+    margin-right: 5px;
+}
+
+.input {
+    background-color: transparent;
+    border: none;
+    color: #00ff00;
+    flex-grow: 1;
+    outline: none;
+    caret-color: #00ff00;
+}
+
+.container {
+    width: 80%;
+    max-width: 800px;
+}
+
+#footer {
+    color: #00ff00;
+    font-family: 'Courier New', Courier, monospace;
+    text-align: center;
+    margin-top: 15px;
+    opacity: 0.7; /* Трохи прозоріший */
+}
+
+#header {
+    color: #00ff00;
+    font-family: 'Courier New', Courier, monospace;
+    text-align: center;
+    margin-bottom: 10px;
+    font-size: 1.2em;
+}
