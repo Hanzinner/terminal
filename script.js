@@ -37,7 +37,7 @@ const fileSystem = {
 |  |  | || | |  |  |
 |  |  '-'| | |  |  |
 |  |     | | |  |  |
-'--'     '-' '--'  `--'
+'--'     '-' '--'  '--'
 `
     }
   ]
@@ -131,5 +131,6 @@ document.addEventListener('keydown', (event) => {
 
 
 renderDirectory();
+
 
 
