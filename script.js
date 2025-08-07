@@ -1,58 +1,23 @@
+import { fileSystem } from './fileSystem.js';
+import { applyTextStyle, getFileTextStyle } from './textStyle.js';
+import { applyGlitchEffect, removeGlitchEffect, startRandomGlitch, stopRandomGlitch, decodeTextEffect, triggerGlitch, decodeLinesSequentially } from './glitch.js';
+
 const terminalDiv = document.getElementById('terminal');
-
-const fileSystem = {
-  name: '/',
-  type: 'directory',
-  children: [
-    {
-      name: 'main',
-      type: 'directory',
-      children: [
-        { name: 'about.txt', type: 'file', content: 'THIS IS DECLASSIFIED STORAGE OF HERODOTUS-XI SYSTEM. ALL RIGHTS RESERVED.' }
-      ]
-    },
-    {
-      name: 'logs',
-      type: 'directory',
-      children: [
-        { name: 'LOG-777.txt', type: 'file', external: true, path: 'LOG-777.txt' }
-      ]
-    },
-    { 
-      name: 'welcome.txt',
-      type: 'file',
-      content: 'Welcome to my retro terminal! Use arrow keys to navigate.' 
-    },
-    { 
-      name: 'skull.txt', 
-      type: 'file', 
-      content: `
-           .--.
-          / /  ''
-         | |
-         | |   .--. 
-  ,----. | |  /    '
- /  .'''.| | |  .''|
-|  /  | || | |  |  |
-|  |  | || | |  |  |
-|  |  '-'| | |  |  |
-|  |     | | |  |  |
-'--'     '-' '--'  ~--'
-`
-    }
-  ]
-};
-
+let glitchInterval = null;
 
 let currentDirectory = fileSystem;
 let selectedIndex = 0;
 let previousDirectory = null;
 let previousIndex = 0;
-let openedFile = null; // Додаємо змінну
+let openedFile = null;
 let expandedDirs = new Set();
+let visibleItems = [];
 
 function renderDirectoryTree(node = currentDirectory, depth = 0, parentIsLast = false) {
-  if (depth === 0) terminalDiv.innerHTML = '';
+  if (depth === 0) {
+    terminalDiv.innerHTML = '';
+    visibleItems = [];
+  }
 
   node.children.forEach((item, index) => {
     const isLast = index === node.children.length - 1;
@@ -63,8 +28,17 @@ function renderDirectoryTree(node = currentDirectory, depth = 0, parentIsLast = 
     }
     prefix += isLast ? '└─ ' : '├─ ';
 
+    visibleItems.push({ item, depth, isLast });
+
+    const cursor = visibleItems.length - 1 === selectedIndex ? '> ' : '  ';
     const line = document.createElement('pre');
-    line.textContent = `${depth === 0 && index === selectedIndex ? '> ' : '  '}${prefix}${item.name}${item.type === 'directory' ? '/' : ''}`;
+    line.classList.add('glitch-text');
+    line.textContent = `${cursor}${prefix}${item.name}${item.type === 'directory' ? '/' : ''}`;
+    line.setAttribute('data-text', line.textContent);
+
+    applyTextStyle(line, visibleItems.length - 1 === selectedIndex);
+    applyGlitchEffect(line);
+
     terminalDiv.appendChild(line);
 
     // Якщо директорія розгорнута, показуємо її вміст рекурсивно
@@ -74,23 +48,42 @@ function renderDirectoryTree(node = currentDirectory, depth = 0, parentIsLast = 
   });
 
   terminalDiv.focus();
+
+  // Запускаємо глітч на вибраному елементі
+  const selectedLine = terminalDiv.children[selectedIndex];
+  if (selectedLine) {
+      triggerGlitch(selectedLine);
+      // або просто використовуйте decodeTextEffect(selectedLine, selectedLine.dataset.text);
+  }
 }
 
 function renderFileContent(file) {
+  const style = getFileTextStyle();
+
+  const render = (text) => {
+    terminalDiv.innerHTML = '';
+    const linesText = text.split('\n');
+    const lines = [];
+    linesText.forEach(lineText => {
+        const line = document.createElement('pre');
+        line.classList.add('glitch-text');
+        line.setAttribute('data-text', lineText);
+        line.style.color = style.color;
+        line.style.textShadow = style.textShadow;
+        terminalDiv.appendChild(line);
+        lines.push(line);
+    });
+    decodeLinesSequentially(lines, linesText, 10); // 10 мс між символами
+    terminalDiv.focus();
+  };
+
   if (file.external && file.path) {
     fetch(file.path)
       .then(response => response.text())
-      .then(text => {
-        terminalDiv.innerHTML = `<pre>${text}</pre>`;
-        terminalDiv.focus();
-      })
-      .catch(() => {
-        terminalDiv.innerHTML = `<pre>Не вдалося завантажити файл.</pre>`;
-        terminalDiv.focus();
-      });
+      .then(text => render(text))
+      .catch(() => render('Не вдалося завантажити файл.'));
   } else {
-    terminalDiv.innerHTML = `<pre>${file.content}</pre>`;
-    terminalDiv.focus();
+    render(file.content);
   }
 }
 
@@ -98,19 +91,18 @@ function navigateTo(item) {
   if (item.type === 'directory') {
     currentDirectory = item;
     selectedIndex = 0;
-    openedFile = null; // Скидаємо файл
+    openedFile = null;
     renderDirectoryTree();
   } else {
     previousDirectory = currentDirectory;
     previousIndex = selectedIndex;
-    openedFile = item; // Запам'ятовуємо відкритий файл
+    openedFile = item;
     renderFileContent(item);
   }
 }
 
 function navigateBack() {
   if (openedFile) {
-    // Якщо відкритий файл, повертаємося до попередньої директорії
     currentDirectory = previousDirectory || fileSystem;
     selectedIndex = previousIndex || 0;
     openedFile = null;
@@ -119,7 +111,6 @@ function navigateBack() {
     renderDirectoryTree();
     return;
   }
-  // Якщо ми не у корені, повертаємось до батьківської директорії
   if (currentDirectory !== fileSystem) {
     const parent = findParent(fileSystem, currentDirectory);
     if (parent) {
@@ -149,33 +140,25 @@ function findParent(node, target) {
 
 
 document.addEventListener('keydown', (event) => {
-    const items = currentDirectory.children;
-    // Перевірка, чи є взагалі що вибирати, щоб уникнути помилок
-    if (!items || items.length === 0) {
-        // Якщо ми всередині файлу, а не папки, дозволяємо вихід назад
-        if (event.code === 'KeyA') {
-            navigateBack();
-        }
-        return;
-    }
+    if (visibleItems.length === 0) return;
 
-    switch (event.code) { // event.code працює незалежно від розкладки
-        case 'KeyW': // Вгору
-            selectedIndex = (selectedIndex - 1 + items.length) % items.length;
+    switch (event.code) {
+        case 'KeyW':
+            selectedIndex = (selectedIndex - 1 + visibleItems.length) % visibleItems.length;
             renderDirectoryTree();
             break;
-        case 'KeyS': // Вниз
-            selectedIndex = (selectedIndex + 1) % items.length;
+        case 'KeyS':
+            selectedIndex = (selectedIndex + 1) % visibleItems.length;
             renderDirectoryTree();
             break;
-        case 'KeyD': // Вхід / Вибір
-            navigateTo(items[selectedIndex]);
+        case 'KeyD':
+            navigateTo(visibleItems[selectedIndex].item);
             break;
-        case 'KeyA': // Назад
+        case 'KeyA':
             navigateBack();
             break;
-        case 'KeyE': // Розгортаємо/згортаємо директорію
-            const selectedItem = items[selectedIndex];
+        case 'KeyE':
+            const selectedItem = visibleItems[selectedIndex].item;
             if (selectedItem.type === 'directory') {
                 if (expandedDirs.has(selectedItem)) {
                     expandedDirs.delete(selectedItem);
@@ -199,4 +182,4 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 
 renderDirectoryTree();
-
+startRandomGlitch(terminalDiv); // якщо треба, передай terminalDiv
