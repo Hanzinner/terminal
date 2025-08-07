@@ -120,7 +120,7 @@ document.addEventListener('keydown', (event) => {
             selectedIndex = (selectedIndex + 1) % items.length;
             renderDirectory();
             break;
-        case 'e': // Вхід / Вибір
+        case 'd': // Вхід / Вибір
             navigateTo(items[selectedIndex]);
             break;
         case 'a': // Назад
@@ -131,6 +131,7 @@ document.addEventListener('keydown', (event) => {
 
 
 renderDirectory();
+
 
 
 
