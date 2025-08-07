@@ -15,7 +15,7 @@ const fileSystem = {
       name: 'logs',
       type: 'directory',
       children: [
-        { name: 'LOG-777.txt', type: 'file', external: true, path: 'log-777.txt' }
+        { name: 'LOG-777.txt', type: 'file', external: true, path: 'LOG-777.txt' }
       ]
     },
     { 
@@ -199,3 +199,4 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 
 renderDirectoryTree();
+
