@@ -30,14 +30,14 @@ const fileSystem = {
            .--.
           / /  ''
          | |
-         | |   .--.
+         | |   .--. 
   ,----. | |  /    '
  /  .'''.| | |  .''|
 |  /  | || | |  |  |
 |  |  | || | |  |  |
 |  |  '-'| | |  |  |
 |  |     | | |  |  |
-'--'     '-' '--'  '--'
+'--'     '-' '--'  ~--'
 `
     }
   ]
@@ -76,8 +76,10 @@ function navigateBack() {
   if (currentDirectory !== fileSystem) {
     const parent = findParent(fileSystem, currentDirectory);
     if (parent) {
+      // Знайти індекс поточної директорії у parent.children
+      const prevIndex = parent.children.findIndex(child => child === currentDirectory);
       currentDirectory = parent;
-      selectedIndex = parent.children.indexOf(currentDirectory); // This might not be correct if we want to select the previously selected item
+      selectedIndex = prevIndex >= 0 ? prevIndex : 0;
       renderDirectory();
     }
   }
@@ -120,7 +122,7 @@ document.addEventListener('keydown', (event) => {
             selectedIndex = (selectedIndex + 1) % items.length;
             renderDirectory();
             break;
-        case 'd': // Вхід / Вибір
+        case 'd': // Вхід / Вибір (замість 'e')
             navigateTo(items[selectedIndex]);
             break;
         case 'a': // Назад
@@ -131,7 +133,4 @@ document.addEventListener('keydown', (event) => {
 
 
 renderDirectory();
-
-
-
-
+  
