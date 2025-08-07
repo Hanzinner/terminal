@@ -5,17 +5,17 @@ const fileSystem = {
   type: 'directory',
   children: [
     {
-      name: 'docs',
+      name: 'main',
       type: 'directory',
       children: [
-        { name: 'about.txt', type: 'file', content: 'This is a project by a user learning to code with AI.' }
+        { name: 'about.txt', type: 'file', content: 'THIS IS DECLASSIFIED STORAGE OF HERODOTUS-XI SYSTEM. ALL RIGHTS RESERVED.' }
       ]
     },
     {
-      name: 'projects',
+      name: 'logs',
       type: 'directory',
       children: [
-        { name: 'project1.txt', type: 'file', content: 'This is the first cool project!' }
+        { name: 'LOG-777.txt', type: 'file', external: true, path: 'log-777.txt' }
       ]
     },
     { 
@@ -46,41 +46,87 @@ const fileSystem = {
 
 let currentDirectory = fileSystem;
 let selectedIndex = 0;
+let previousDirectory = null;
+let previousIndex = 0;
+let openedFile = null; // Додаємо змінну
+let expandedDirs = new Set();
 
+function renderDirectoryTree(node = currentDirectory, depth = 0, parentIsLast = false) {
+  if (depth === 0) terminalDiv.innerHTML = '';
 
+  node.children.forEach((item, index) => {
+    const isLast = index === node.children.length - 1;
+    let prefix = '';
+    if (depth > 0) {
+      prefix += ' '.repeat((depth - 1) * 2);
+      prefix += parentIsLast ? '  ' : '│ ';
+    }
+    prefix += isLast ? '└─ ' : '├─ ';
 
-function renderDirectory() {
-  terminalDiv.innerHTML = '';
-  currentDirectory.children.forEach((item, index) => {
     const line = document.createElement('pre');
-    line.textContent = `${index === selectedIndex ? '> ' : '  '}${item.name}${item.type === 'directory' ? '/' : ''}`;
+    line.textContent = `${depth === 0 && index === selectedIndex ? '> ' : '  '}${prefix}${item.name}${item.type === 'directory' ? '/' : ''}`;
     terminalDiv.appendChild(line);
+
+    // Якщо директорія розгорнута, показуємо її вміст рекурсивно
+    if (item.type === 'directory' && expandedDirs.has(item)) {
+      renderDirectoryTree(item, depth + 1, isLast);
+    }
   });
+
+  terminalDiv.focus();
 }
 
 function renderFileContent(file) {
-  terminalDiv.innerHTML = `<pre>${file.content}</pre>`;
+  if (file.external && file.path) {
+    fetch(file.path)
+      .then(response => response.text())
+      .then(text => {
+        terminalDiv.innerHTML = `<pre>${text}</pre>`;
+        terminalDiv.focus();
+      })
+      .catch(() => {
+        terminalDiv.innerHTML = `<pre>Не вдалося завантажити файл.</pre>`;
+        terminalDiv.focus();
+      });
+  } else {
+    terminalDiv.innerHTML = `<pre>${file.content}</pre>`;
+    terminalDiv.focus();
+  }
 }
 
 function navigateTo(item) {
   if (item.type === 'directory') {
     currentDirectory = item;
     selectedIndex = 0;
-    renderDirectory();
+    openedFile = null; // Скидаємо файл
+    renderDirectoryTree();
   } else {
+    previousDirectory = currentDirectory;
+    previousIndex = selectedIndex;
+    openedFile = item; // Запам'ятовуємо відкритий файл
     renderFileContent(item);
   }
 }
 
 function navigateBack() {
+  if (openedFile) {
+    // Якщо відкритий файл, повертаємося до попередньої директорії
+    currentDirectory = previousDirectory || fileSystem;
+    selectedIndex = previousIndex || 0;
+    openedFile = null;
+    previousDirectory = null;
+    previousIndex = 0;
+    renderDirectoryTree();
+    return;
+  }
+  // Якщо ми не у корені, повертаємось до батьківської директорії
   if (currentDirectory !== fileSystem) {
     const parent = findParent(fileSystem, currentDirectory);
     if (parent) {
-      // Знайти індекс поточної директорії у parent.children
       const prevIndex = parent.children.findIndex(child => child === currentDirectory);
       currentDirectory = parent;
       selectedIndex = prevIndex >= 0 ? prevIndex : 0;
-      renderDirectory();
+      renderDirectoryTree();
     }
   }
 }
@@ -107,30 +153,49 @@ document.addEventListener('keydown', (event) => {
     // Перевірка, чи є взагалі що вибирати, щоб уникнути помилок
     if (!items || items.length === 0) {
         // Якщо ми всередині файлу, а не папки, дозволяємо вихід назад
-        if (event.key.toLowerCase() === 'a') {
+        if (event.code === 'KeyA') {
             navigateBack();
         }
         return;
     }
 
-    switch (event.key.toLowerCase()) { // toLowerCase() ігнорує Shift
-        case 'w': // Вгору
+    switch (event.code) { // event.code працює незалежно від розкладки
+        case 'KeyW': // Вгору
             selectedIndex = (selectedIndex - 1 + items.length) % items.length;
-            renderDirectory();
+            renderDirectoryTree();
             break;
-        case 's': // Вниз
+        case 'KeyS': // Вниз
             selectedIndex = (selectedIndex + 1) % items.length;
-            renderDirectory();
+            renderDirectoryTree();
             break;
-        case 'd': // Вхід / Вибір (замість 'e')
+        case 'KeyD': // Вхід / Вибір
             navigateTo(items[selectedIndex]);
             break;
-        case 'a': // Назад
+        case 'KeyA': // Назад
             navigateBack();
+            break;
+        case 'KeyE': // Розгортаємо/згортаємо директорію
+            const selectedItem = items[selectedIndex];
+            if (selectedItem.type === 'directory') {
+                if (expandedDirs.has(selectedItem)) {
+                    expandedDirs.delete(selectedItem);
+                } else {
+                    expandedDirs.add(selectedItem);
+                }
+                renderDirectoryTree();
+            }
             break;
     }
 });
 
+// Додаємо фокус при кліку по терміналу
+terminalDiv.addEventListener('click', () => {
+  terminalDiv.focus();
+});
 
-renderDirectory();
-  
+// Додаємо фокус при завантаженні сторінки
+window.addEventListener('DOMContentLoaded', () => {
+  terminalDiv.focus();
+});
+
+renderDirectoryTree();
