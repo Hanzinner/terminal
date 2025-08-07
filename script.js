@@ -18,6 +18,30 @@ const fileSystem = {
         { name: 'project1.txt', type: 'file', content: 'This is the first cool project!' }
       ]
     },
+    { 
+      name: 'welcome.txt',
+      type: 'file',
+      content: 'Welcome to my retro terminal! Use arrow keys to navigate.' },
+    // ОСЬ НОВИЙ ФАЙЛ
+    { 
+        name: 'skull.txt', 
+        type: 'file', 
+        content: `
+           .--.
+          / /  ''
+         | |
+         | |   .--.
+  ,----. | |  /    '
+ /  .'''.| | |  .''|
+|  /  | || | |  |  |
+|  |  | || | |  |  |
+|  |  '-'| | |  |  |
+|  |     | | |  |  |
+'--'     '-' '--'  `--'
+`
+    }
+]
+// ...
     { name: 'welcome.txt', type: 'file', content: 'Welcome to my retro terminal! Use arrow keys to navigate.' }
   ]
 };
@@ -107,5 +131,6 @@ document.addEventListener('keydown', (event) => {
             break;
     }
 });
+
 
 renderDirectory();
