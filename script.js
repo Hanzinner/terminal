@@ -21,12 +21,12 @@ const fileSystem = {
     { 
       name: 'welcome.txt',
       type: 'file',
-      content: 'Welcome to my retro terminal! Use arrow keys to navigate.' },
-    // ОСЬ НОВИЙ ФАЙЛ
+      content: 'Welcome to my retro terminal! Use arrow keys to navigate.' 
+    },
     { 
-        name: 'skull.txt', 
-        type: 'file', 
-        content: `
+      name: 'skull.txt', 
+      type: 'file', 
+      content: `
            .--.
           / /  ''
          | |
@@ -40,9 +40,6 @@ const fileSystem = {
 '--'     '-' '--'  `--'
 `
     }
-]
-// ...
-    { name: 'welcome.txt', type: 'file', content: 'Welcome to my retro terminal! Use arrow keys to navigate.' }
   ]
 };
 
@@ -134,3 +131,4 @@ document.addEventListener('keydown', (event) => {
 
 
 renderDirectory();
+
